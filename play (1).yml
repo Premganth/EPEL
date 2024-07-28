@@ -1,0 +1,33 @@
+---
+
+- name: Manage YUM repositories
+  hosts: all
+  become: true
+  tasks:
+    - name: Remove all existing YUM repositories
+      file:
+        path: /etc/yum.repos.d/
+        state: absent
+        recurse: yes
+    - name: Create AppStream repository
+      yum_repository:
+         name: AppStream
+         description: RHEL 9 AppStream
+         baseurl: http://content.example.com/rhel9.0/x86_64/dvd/AppStream
+         enabled: yes
+         gpgcheck: no
+    - name: Create BaseOS repository
+      yum_repository:
+         name: BaseOS
+         description: RHEL 9 BaseOS
+         baseurl: http://content.example.com/rhel9.0/x86_64/dvd/BaseOS
+         enabled: yes
+         gpgcheck: no
+    - name: Create EPEL repository
+      yum_repository:
+         name: EPEL
+         description: RHEL 9 extras
+         baseurl:  https://rpmfind.net/linux/epel/9/Everything/x86_64/
+         enabled: yes
+         gpgcheck: no
+

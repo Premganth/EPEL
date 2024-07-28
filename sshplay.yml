@@ -1,0 +1,50 @@
+---
+
+- name: SSH Setup and Configuration on serverb
+  hosts: serverb
+  become: yes
+  vars:
+   - user_name: 19U5
+   - user_password: "{{ 'Kgm@123' | password_hash('sha512') }}"
+  tasks:
+    - name: Create user {{ user_name }} on serverb
+      user:
+       name: "{{ user_name }}"
+       password: "{{ user_password }}"
+       state: present
+  
+    - name: Create .ssh directory for {{ user_name }}
+      file:
+        path: "/home/{{ user_name }}/.ssh"
+        state: directory
+        owner: "{{ user_name }}"
+        mode: 0700
+    - name: Enable root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin yes'
+    - name: Disable password-based login
+      lineinfile:
+        path: /etc/ssh/sshd_config                                  
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+    - name: Restart SSH service
+      service:
+        name: sshd
+        state: restarted
+- name: Setup SSH Key-based Authentication from servera to serverb
+  hosts: localhost
+  tasks:
+        - name: Generate SSH key if not present
+          stat:
+            path: "~/.ssh/id_rsa.pub"
+          register: ssh_key
+        - name: Generate SSH key if not present
+          command: ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -q -N ""
+          when: not ssh_key.stat.exists
+        - name: Copy SSH key to serverb
+          shell: ssh-copy-id -i ~/.ssh/id_rsa.pub 19U5@serverb
+          delegate_to: localhost
+
+
